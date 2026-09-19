@@ -2,7 +2,10 @@ using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using TiendaLinea.Models;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using TiendaLinea.Data.Context;
 
 namespace TiendaLinea.UI.Controls
 {
@@ -120,4 +123,5 @@ namespace TiendaLinea.UI.Controls
             GridActions.ExportSelected<Usuario>(_grid, "Usuario.json", (emp, path) => emp.SaveToJson(path));
     }
 }
+
 

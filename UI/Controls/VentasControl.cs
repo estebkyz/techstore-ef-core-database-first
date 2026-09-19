@@ -3,9 +3,18 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using TiendaLinea.Models;
-using TiendaLinea.Models;
-using TiendaLinea.Models;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using TiendaLinea.Data.Context;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using TiendaLinea.Data.Context;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using TiendaLinea.Data.Context;
 
 namespace TiendaLinea.UI.Controls
 {
@@ -233,8 +242,8 @@ namespace TiendaLinea.UI.Controls
 
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Codigo",     HeaderText = "# Venta", Width = 70 });
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "FechaVenta", HeaderText = "Fecha",   Width = 120 });
-            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCliente",  HeaderText = "Usuario",   Width = 160, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmpleado", HeaderText = "Usuario",  Width = 140 });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCliente",  HeaderText = "Cliente",   Width = 160, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmpleado", HeaderText = "Empleado",  Width = 140 });
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colItems",    HeaderText = "Ítems",     Width = 55 });
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTotal",    HeaderText = "Total",     Width = 100 });
 
@@ -334,13 +343,13 @@ namespace TiendaLinea.UI.Controls
         {
             if (_cmbCliente.SelectedItem is not ComboItem<Usuario> cliItem)
             {
-                MessageBox.Show("Debe seleccionar un Usuario.", "Error",
+                MessageBox.Show("Debe seleccionar un Cliente.", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             if (_cmbEmpleado.SelectedItem is not ComboItem<Usuario> empItem)
             {
-                MessageBox.Show("Debe seleccionar un Usuario/vendedor.", "Error",
+                MessageBox.Show("Debe seleccionar un Empleado.", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -454,5 +463,6 @@ namespace TiendaLinea.UI.Controls
         }
     }
 }
+
 
 

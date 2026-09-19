@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Forms;
 using Microsoft.EntityFrameworkCore;
-using TiendaLinea.Data;
+using TiendaLinea.Data.Context;
 using TiendaLinea.UI;
 
 namespace TiendaLinea
@@ -16,7 +16,7 @@ namespace TiendaLinea
             System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
 
             // Crear/actualizar la base de datos MySQL automáticamente
-            using (var context = new TechStoreDbContext())
+            using (var context = new AppDbContext())
             {
                 context.Database.Migrate();
             }
@@ -26,4 +26,5 @@ namespace TiendaLinea
         }
     }
 }
+
 

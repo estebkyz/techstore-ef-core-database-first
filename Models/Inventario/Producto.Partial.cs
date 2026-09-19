@@ -1,6 +1,9 @@
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
 using System;
 
-namespace TiendaLinea.Models
+namespace TiendaLinea.Models.Inventario
 {
     public partial class Producto
     {
@@ -27,3 +30,6 @@ namespace TiendaLinea.Models
         public void SaveToJson(string path) { }
     }
 }
+
+
+

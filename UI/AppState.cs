@@ -3,7 +3,10 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TiendaLinea.Data;
-using TiendaLinea.Models;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using TiendaLinea.Data.Context;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,7 +22,7 @@ namespace TiendaLinea.UI
 
         public async Task LoadAllFromDatabaseAsync()
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             
             var prods = await db.Productos.OrderBy(p => p.Codigo).ToListAsync();
             var usrs = await db.Usuarios.OrderBy(u => u.Codigo).ToListAsync();
@@ -51,12 +54,11 @@ namespace TiendaLinea.UI
             foreach (var v in vents) Ventas.Add(v);
         }
 
-        // --- PRODUCTOS ---
         public int GetNextCodigoProducto() => Productos.Count > 0 ? Productos.Max(p => p.Codigo) + 1 : 101;
         
         public async Task AddProductoAsync(Producto producto)
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             db.Productos.Add(producto);
             await db.SaveChangesAsync();
             Productos.Add(producto);
@@ -64,7 +66,7 @@ namespace TiendaLinea.UI
 
         public async Task UpdateProductoAsync(Producto producto)
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             var tracked = await db.Productos.FirstOrDefaultAsync(p => p.Codigo == producto.Codigo);
             if (tracked != null)
             {
@@ -83,11 +85,10 @@ namespace TiendaLinea.UI
         
         public async Task<bool> TieneVentasAsociadasAsync(Producto producto)
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             return await db.Detallesventa.AnyAsync(d => d.ProductoId == producto.Codigo);
         }
 
-        // --- USUARIOS GENERAL ---
         public int GetNextCodigoUsuario() => 
             Math.Max(
                 Math.Max(
@@ -99,27 +100,26 @@ namespace TiendaLinea.UI
 
         public async Task<bool> ExisteCorreoAsync(string correo)
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             return await db.Usuarios.AnyAsync(u => u.Correo == correo.Trim().ToLower());
         }
 
-        public async Task AddClienteAsync(Usuario c) { using var db = new TechStoreDbContext(); db.Usuarios.Add(c); await db.SaveChangesAsync(); Clientes.Add(c); }
-        public async Task UpdateClienteAsync(Usuario c) { using var db = new TechStoreDbContext(); db.Usuarios.Update(c); await db.SaveChangesAsync(); Clientes.ResetBindings(); }
+        public async Task AddClienteAsync(Usuario c) { using var db = new AppDbContext(); db.Usuarios.Add(c); await db.SaveChangesAsync(); Clientes.Add(c); }
+        public async Task UpdateClienteAsync(Usuario c) { using var db = new AppDbContext(); db.Usuarios.Update(c); await db.SaveChangesAsync(); Clientes.ResetBindings(); }
 
-        public async Task AddEmpleadoAsync(Usuario e) { using var db = new TechStoreDbContext(); db.Usuarios.Add(e); await db.SaveChangesAsync(); Empleados.Add(e); }
-        public async Task UpdateEmpleadoAsync(Usuario e) { using var db = new TechStoreDbContext(); db.Usuarios.Update(e); await db.SaveChangesAsync(); Empleados.ResetBindings(); }
+        public async Task AddEmpleadoAsync(Usuario e) { using var db = new AppDbContext(); db.Usuarios.Add(e); await db.SaveChangesAsync(); Empleados.Add(e); }
+        public async Task UpdateEmpleadoAsync(Usuario e) { using var db = new AppDbContext(); db.Usuarios.Update(e); await db.SaveChangesAsync(); Empleados.ResetBindings(); }
 
-        public async Task AddAdministradorAsync(Usuario a) { using var db = new TechStoreDbContext(); db.Usuarios.Add(a); await db.SaveChangesAsync(); Administradores.Add(a); }
-        public async Task UpdateAdministradorAsync(Usuario a) { using var db = new TechStoreDbContext(); db.Usuarios.Update(a); await db.SaveChangesAsync(); Administradores.ResetBindings(); }
+        public async Task AddAdministradorAsync(Usuario a) { using var db = new AppDbContext(); db.Usuarios.Add(a); await db.SaveChangesAsync(); Administradores.Add(a); }
+        public async Task UpdateAdministradorAsync(Usuario a) { using var db = new AppDbContext(); db.Usuarios.Update(a); await db.SaveChangesAsync(); Administradores.ResetBindings(); }
 
         // --- VENTAS ---
         public int GetNextCodigoVenta() => Ventas.Count > 0 ? Ventas.Max(v => v.Codigo) + 1 : 1001;
 
         public async Task AddVentaAsync(Venta venta, IList<Detallesventum> detalles)
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             
-            // Limpiar referencias a objetos para que EF Core no intente insertarlos de nuevo
             venta.Cliente = null!;
             venta.Empleado = null!;
             
@@ -151,7 +151,7 @@ namespace TiendaLinea.UI
 
         public async Task DeleteVentaAsync(Venta venta)
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             var tracked = await db.Ventas.FirstOrDefaultAsync(v => v.Codigo == venta.Codigo);
             if (tracked != null)
             {
@@ -163,7 +163,7 @@ namespace TiendaLinea.UI
 
         public async Task LoadDemoDataAsync()
         {
-            using var db = new TechStoreDbContext();
+            using var db = new AppDbContext();
             
             await db.Detallesventa.ExecuteDeleteAsync();
             await db.Ventas.ExecuteDeleteAsync();
@@ -193,4 +193,5 @@ namespace TiendaLinea.UI
         }
     }
 }
+
 

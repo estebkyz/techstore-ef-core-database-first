@@ -1,20 +1,23 @@
-﻿using System;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using TiendaLinea.Models;
 
-namespace TiendaLinea.Data;
+namespace TiendaLinea.Data.Context;
 
-public partial class TechStoreDbContext : DbContext
+public partial class AppDbContext : DbContext
 {
-    public TechStoreDbContext(DbContextOptions<TechStoreDbContext> options)
+    public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
     {
     }
 
     public virtual DbSet<Detallesventum> Detallesventa { get; set; }
 
-    public virtual DbSet<Efmigrationshistory> Efmigrationshistories { get; set; }
+    
 
     public virtual DbSet<Producto> Productos { get; set; }
 
@@ -55,17 +58,7 @@ public partial class TechStoreDbContext : DbContext
                 .HasConstraintName("FK_DetallesVenta_Ventas_VentaId");
         });
 
-        modelBuilder.Entity<Efmigrationshistory>(entity =>
-        {
-            entity.HasKey(e => e.MigrationId).HasName("PRIMARY");
-
-            entity
-                .ToTable("__efmigrationshistory")
-                .UseCollation("utf8mb4_general_ci");
-
-            entity.Property(e => e.MigrationId).HasMaxLength(150);
-            entity.Property(e => e.ProductVersion).HasMaxLength(32);
-        });
+        
 
         modelBuilder.Entity<Producto>(entity =>
         {
@@ -142,3 +135,5 @@ public partial class TechStoreDbContext : DbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
+

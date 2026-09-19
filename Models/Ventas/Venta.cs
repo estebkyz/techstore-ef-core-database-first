@@ -1,7 +1,10 @@
-﻿using System;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using System;
 using System.Collections.Generic;
 
-namespace TiendaLinea.Models;
+namespace TiendaLinea.Models.Ventas;
 
 public partial class Venta
 {
@@ -19,3 +22,5 @@ public partial class Venta
 
     public virtual Usuario Empleado { get; set; } = null!;
 }
+
+

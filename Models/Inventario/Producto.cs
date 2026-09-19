@@ -1,7 +1,10 @@
-﻿using System;
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
+using System;
 using System.Collections.Generic;
 
-namespace TiendaLinea.Models;
+namespace TiendaLinea.Models.Inventario;
 
 public partial class Producto
 {
@@ -25,3 +28,5 @@ public partial class Producto
 
     public virtual ICollection<Detallesventum> Detallesventa { get; set; } = new List<Detallesventum>();
 }
+
+

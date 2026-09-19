@@ -1,7 +1,10 @@
+using TiendaLinea.Models.Inventario;
+using TiendaLinea.Models.Usuarios;
+using TiendaLinea.Models.Ventas;
 using System;
 using System.Linq;
 
-namespace TiendaLinea.Models
+namespace TiendaLinea.Models.Ventas
 {
     public partial class Detallesventum
     {
@@ -18,3 +21,6 @@ namespace TiendaLinea.Models
         public decimal TotalItem => SubtotalItem + IVAItem;
     }
 }
+
+
+
