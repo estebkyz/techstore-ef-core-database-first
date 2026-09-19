@@ -1,189 +1,458 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 using TiendaLinea.Models;
-using TiendaLinea.UI;
+using TiendaLinea.Models;
+using TiendaLinea.Models;
 
 namespace TiendaLinea.UI.Controls
 {
     public class VentasControl : UserControl, IReferenceDataConsumer
     {
-        private readonly AppState _state;
-        private readonly ErrorProvider _errors = new();
+        private readonly AppState _appState;
+        private readonly DataGridView  _gridVentas    = new();
+        private readonly BindingSource _bindingSource  = new();
 
-        private DataGridView _gridVentas = null!, _gridDetalles = null!;
-        private TextBox _txtCodigoVenta = null!;
-        private ComboBox _cmbCliente = null!, _cmbEmpleado = null!;
-        private TextBox _txtCantidad = null!;
-        private ComboBox _cmbProducto = null!;
-        private Button _btnCrear = null!, _btnEliminar = null!, _btnAgregarDet = null!, _btnLimpiarVenta = null!;
-        
-        private Venta? _selectedVenta;
-        private readonly List<Detallesventum> _detallesBorrador = new(); // Para armar la venta antes de guardar
+        private readonly DataGridView      _gridDetalles  = new();
+        private readonly List<Detallesventum> _detallesActuales = new();
 
-        public VentasControl(AppState state) { _state = state; BuildUI(); }
+        private readonly ComboBox       _cmbCliente  = new() { DropDownStyle = ComboBoxStyle.DropDownList };
+        private readonly ComboBox       _cmbEmpleado = new() { DropDownStyle = ComboBoxStyle.DropDownList };
+        private readonly DateTimePicker _dtpFecha    = new();
 
-        private void BuildUI()
+        private readonly ComboBox       _cmbProducto = new() { DropDownStyle = ComboBoxStyle.DropDownList };
+        private readonly NumericUpDown  _numCantidad = new() { Minimum = 1, Maximum = 9999, Value = 1 };
+
+        private readonly Label _lblSubtotal = new() { AutoSize = true, Font = FormLayoutHelper.BoldFont };
+        private readonly Label _lblIVA      = new() { AutoSize = true, Font = FormLayoutHelper.BoldFont };
+        private readonly Label _lblTotal    = new() { AutoSize = true, Font = new Font("Segoe UI", 12f, FontStyle.Bold) };
+
+        private readonly Label _lblCodigo = new() { AutoSize = true, Font = FormLayoutHelper.BoldFont };
+
+        public VentasControl(AppState appState)
         {
-            Dock = DockStyle.Fill;
-            var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, SplitterDistance = 250 };
+            _appState = appState;
+            InitializeLayout();
+            Enter += (_, _) => RefreshReferenceData();
+        }
 
-            // TOP PANEL (Ventas)
-            var pnlTop = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 5, Padding = new Padding(8) };
-            pnlTop.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
-            pnlTop.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        private void InitializeLayout()
+        {
+            var grpAgregacion = new GroupBox
+            {
+                Text    = "Seleccionar Usuario y Usuario ya existentes",
+                Dock    = DockStyle.Top,
+                Height  = 90,
+                Padding = new Padding(8, 4, 8, 4)
+            };
+            FormLayoutHelper.StyleGroupBox(grpAgregacion);
 
-            void AddRow(TableLayoutPanel p, string lbl, Control ctrl, int r) { p.Controls.Add(new Label { Text = lbl, TextAlign = ContentAlignment.MiddleRight, Dock = DockStyle.Fill }, 0, r); p.Controls.Add(ctrl, 1, r); }
+            var tblAgr = new TableLayoutPanel
+            {
+                Dock        = DockStyle.Fill,
+                ColumnCount = 6,
+                RowCount    = 1,
+                Font        = FormLayoutHelper.AppFont
+            };
+            tblAgr.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tblAgr.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30f));
+            tblAgr.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tblAgr.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30f));
+            tblAgr.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tblAgr.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40f));
+            tblAgr.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
 
-            _txtCodigoVenta = new TextBox { Dock = DockStyle.Fill };
-            _cmbCliente     = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
-            _cmbEmpleado    = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+            void AddLabel(string text, int col) => tblAgr.Controls.Add(new Label
+            {
+                Text = text, AutoSize = true, Anchor = AnchorStyles.Left,
+                TextAlign = ContentAlignment.MiddleLeft, Font = FormLayoutHelper.AppFont,
+                ForeColor = FormLayoutHelper.TextColor, Margin = new Padding(0, 4, 6, 0)
+            }, col, 0);
 
-            AddRow(pnlTop, "Código:",   _txtCodigoVenta, 0);
-            AddRow(pnlTop, "Cliente:",  _cmbCliente,     1);
-            AddRow(pnlTop, "Empleado:", _cmbEmpleado,    2);
+            AddLabel("Usuario:", 0);
+            _cmbCliente.Dock = DockStyle.Fill;
+            tblAgr.Controls.Add(_cmbCliente, 1, 0);
 
-            var btnTop = new FlowLayoutPanel { Dock = DockStyle.Fill };
-            _btnCrear        = new Button { Text = "Registrar Venta", Width = 110 };
-            _btnEliminar     = new Button { Text = "Eliminar Venta",  Width = 110 };
-            _btnLimpiarVenta = new Button { Text = "Nueva",           Width = 90 };
-            btnTop.Controls.AddRange(new Control[] { _btnCrear, _btnEliminar, _btnLimpiarVenta });
-            pnlTop.Controls.Add(btnTop, 1, 3);
+            AddLabel("Usuario:", 2);
+            _cmbEmpleado.Dock = DockStyle.Fill;
+            tblAgr.Controls.Add(_cmbEmpleado, 3, 0);
 
-            _gridVentas = new DataGridView { Dock = DockStyle.Fill, ReadOnly = true, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false, AutoGenerateColumns = false };
-            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Codigo", HeaderText = "Código" });
-            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Fecha",  HeaderText = "Fecha" });
-            
-            var colCli = new DataGridViewTextBoxColumn { HeaderText = "Cliente" };
-            _gridVentas.Columns.Add(colCli);
-            _gridVentas.CellFormatting += (s, e) => {
-                if (e.ColumnIndex == 2 && e.RowIndex >= 0 && _gridVentas.Rows[e.RowIndex].DataBoundItem is Venta v)
-                    e.Value = v.Cliente?.Nombre ?? "N/A";
+            AddLabel("Fecha:", 4);
+            _dtpFecha.Dock = DockStyle.Fill;
+            tblAgr.Controls.Add(_dtpFecha, 5, 0);
+
+            grpAgregacion.Controls.Add(tblAgr);
+
+            var grpComposicion = new GroupBox
+            {
+                Text    = "Añadir ítems a la venta",
+                Dock    = DockStyle.Top,
+                Height  = 65,
+                Padding = new Padding(8, 4, 8, 4)
+            };
+            FormLayoutHelper.StyleGroupBox(grpComposicion);
+
+            var tblComp = new TableLayoutPanel
+            {
+                Dock        = DockStyle.Fill,
+                ColumnCount = 6,
+                RowCount    = 1,
+                Font        = FormLayoutHelper.AppFont
+            };
+            tblComp.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tblComp.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60f));
+            tblComp.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tblComp.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90f));
+            tblComp.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tblComp.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130f));
+            tblComp.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+
+            tblComp.Controls.Add(new Label
+            {
+                Text = "Producto:", AutoSize = true, Anchor = AnchorStyles.Left,
+                TextAlign = ContentAlignment.MiddleLeft, Font = FormLayoutHelper.AppFont,
+                ForeColor = FormLayoutHelper.TextColor, Margin = new Padding(0, 4, 6, 0)
+            }, 0, 0);
+            _cmbProducto.Dock = DockStyle.Fill;
+            tblComp.Controls.Add(_cmbProducto, 1, 0);
+
+            tblComp.Controls.Add(new Label
+            {
+                Text = "Cantidad:", AutoSize = true, Anchor = AnchorStyles.Left,
+                TextAlign = ContentAlignment.MiddleLeft, Font = FormLayoutHelper.AppFont,
+                ForeColor = FormLayoutHelper.TextColor, Margin = new Padding(8, 4, 6, 0)
+            }, 2, 0);
+            _numCantidad.Dock = DockStyle.Fill;
+            tblComp.Controls.Add(_numCantidad, 3, 0);
+
+            var btnAnadir = new Button { Text = "＋  Añadir ítem", AutoSize = true, Dock = DockStyle.Fill };
+            FormLayoutHelper.StyleButton(btnAnadir, ButtonStyle.Primary);
+            btnAnadir.Click += OnAnadirDetalleClick;
+            tblComp.Controls.Add(btnAnadir, 5, 0);
+
+            grpComposicion.Controls.Add(tblComp);
+
+            _gridDetalles.Dock               = DockStyle.Top;
+            _gridDetalles.Height             = 120;
+            _gridDetalles.AutoGenerateColumns = false;
+            _gridDetalles.ReadOnly           = true;
+            _gridDetalles.AllowUserToAddRows  = false;
+            _gridDetalles.AllowUserToDeleteRows = false;
+            FormLayoutHelper.StyleGrid(_gridDetalles);
+
+            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colProd",   HeaderText = "Producto",    Width = 220, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCant",   HeaderText = "Cant.",       Width = 60 });
+            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrecio", HeaderText = "Precio unit.", Width = 100 });
+            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colIVA",    HeaderText = "IVA",         Width = 60 });
+            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTotal",  HeaderText = "Total ítem",  Width = 100 });
+            var colQuitar = new DataGridViewButtonColumn
+            {
+                Name = "colQuitar", HeaderText = "", Text = "✕", UseColumnTextForButtonValue = true, Width = 40
+            };
+            _gridDetalles.Columns.Add(colQuitar);
+
+            _gridDetalles.CellClick += OnDetallesCellClick;
+
+            var pnlResumen = new Panel
+            {
+                Dock      = DockStyle.Bottom,
+                Height    = 85,
+                BackColor = Color.White,
+                Padding   = new Padding(10, 6, 10, 6)
             };
 
-            var colEmp = new DataGridViewTextBoxColumn { HeaderText = "Empleado" };
-            _gridVentas.Columns.Add(colEmp);
-            _gridVentas.CellFormatting += (s, e) => {
-                if (e.ColumnIndex == 3 && e.RowIndex >= 0 && _gridVentas.Rows[e.RowIndex].DataBoundItem is Venta v)
-                    e.Value = v.Empleado?.Nombre ?? "N/A";
+            var tblResumen = new TableLayoutPanel
+            {
+                Dock        = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount    = 2
+            };
+            tblResumen.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55f));
+            tblResumen.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45f));
+            tblResumen.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+            tblResumen.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+
+            var pnlCodigo = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
+            pnlCodigo.Controls.Add(new Label { Text = "Código venta:", AutoSize = true, Font = FormLayoutHelper.AppFont, ForeColor = FormLayoutHelper.TextColor, Margin = new Padding(0, 3, 4, 0) });
+            _lblCodigo.Text      = $"#{_appState.GetNextCodigoVenta()}";
+            _lblCodigo.ForeColor = FormLayoutHelper.AccentBlue;
+            pnlCodigo.Controls.Add(_lblCodigo);
+            tblResumen.Controls.Add(pnlCodigo, 0, 0);
+
+            var pnlTotales = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
+
+            _lblSubtotal.Text      = "Subtotal: $0.00";
+            _lblSubtotal.ForeColor = FormLayoutHelper.NeutralGray;
+            _lblIVA.Text           = "  IVA: $0.00";
+            _lblIVA.ForeColor      = FormLayoutHelper.NeutralGray;
+            _lblTotal.Text         = "  TOTAL: $0.00";
+            _lblTotal.ForeColor    = FormLayoutHelper.AccentBlue;
+
+            pnlTotales.Controls.Add(_lblSubtotal);
+            pnlTotales.Controls.Add(_lblIVA);
+            pnlTotales.Controls.Add(_lblTotal);
+            tblResumen.Controls.Add(pnlTotales, 1, 0);
+
+            var pnlBotones = new FlowLayoutPanel
+            {
+                Dock          = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                Padding       = new Padding(0)
             };
 
-            _gridVentas.DataSource = _state.Ventas;
+            var btnConfirmar   = new Button { Text = "✓  Confirmar Venta", AutoSize = true };
+            var btnComprobante = new Button { Text = "📋 Ver Comprobante",  AutoSize = true };
+            var btnExport      = new Button { Text = "📤  Exportar JSON",   AutoSize = true };
+            var btnLimpiar     = new Button { Text = "⟳  Limpiar",         AutoSize = true };
 
-            var pnlTopContainer = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 350 };
-            pnlTopContainer.Panel1.Controls.Add(pnlTop);
-            pnlTopContainer.Panel2.Controls.Add(_gridVentas);
-            split.Panel1.Controls.Add(pnlTopContainer);
+            FormLayoutHelper.StyleButton(btnConfirmar,   ButtonStyle.Success);
+            FormLayoutHelper.StyleButton(btnComprobante, ButtonStyle.Neutral);
+            FormLayoutHelper.StyleButton(btnExport,      ButtonStyle.Neutral);
+            FormLayoutHelper.StyleButton(btnLimpiar,     ButtonStyle.Danger);
 
-            // BOTTOM PANEL (Detalles)
-            var pnlBot = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 3, Padding = new Padding(8) };
-            pnlBot.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
-            pnlBot.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            btnConfirmar.Click   += OnConfirmarVentaClick;
+            btnComprobante.Click += OnVerComprobanteClick;
+            btnExport.Click      += OnExportClick;
+            btnLimpiar.Click     += (_, _) => LimpiarFormulario();
 
-            _cmbProducto = new ComboBox { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
-            _txtCantidad = new TextBox { Dock = DockStyle.Fill };
-            _btnAgregarDet = new Button { Text = "Añadir a Venta Actual", Width = 150 };
+            pnlBotones.Controls.Add(btnConfirmar);
+            pnlBotones.Controls.Add(btnComprobante);
+            pnlBotones.Controls.Add(btnExport);
+            pnlBotones.Controls.Add(btnLimpiar);
+            tblResumen.Controls.Add(pnlBotones, 0, 1);
+            tblResumen.SetColumnSpan(pnlBotones, 2);
 
-            AddRow(pnlBot, "Producto:", _cmbProducto, 0);
-            AddRow(pnlBot, "Cantidad:", _txtCantidad, 1);
-            pnlBot.Controls.Add(_btnAgregarDet, 1, 2);
+            pnlResumen.Controls.Add(tblResumen);
 
-            _gridDetalles = new DataGridView { Dock = DockStyle.Fill, ReadOnly = true, SelectionMode = DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows = false, AutoGenerateColumns = false };
-            var colProd = new DataGridViewTextBoxColumn { HeaderText = "Producto" };
-            _gridDetalles.Columns.Add(colProd);
-            _gridDetalles.CellFormatting += (s, e) => {
-                if (e.ColumnIndex == 0 && e.RowIndex >= 0 && _gridDetalles.Rows[e.RowIndex].DataBoundItem is Detallesventum d)
-                {
-                    if (d.ProductoCodigoNavigation != null) e.Value = d.ProductoCodigoNavigation.Nombre;
-                    else e.Value = _state.Productos.FirstOrDefault(p => p.Codigo == d.ProductoCodigo)?.Nombre ?? d.ProductoCodigo.ToString();
-                }
-            };
-            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Cantidad",       HeaderText = "Cantidad" });
-            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "PrecioUnitario", HeaderText = "Precio Unit." });
+            _gridVentas.Dock               = DockStyle.Fill;
+            _gridVentas.AutoGenerateColumns = false;
+            _gridVentas.ReadOnly           = true;
+            FormLayoutHelper.StyleGrid(_gridVentas);
 
-            var pnlBotContainer = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, SplitterDistance = 350 };
-            pnlBotContainer.Panel1.Controls.Add(pnlBot);
-            pnlBotContainer.Panel2.Controls.Add(_gridDetalles);
-            split.Panel2.Controls.Add(pnlBotContainer);
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Codigo",     HeaderText = "# Venta", Width = 70 });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "FechaVenta", HeaderText = "Fecha",   Width = 120 });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCliente",  HeaderText = "Usuario",   Width = 160, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmpleado", HeaderText = "Usuario",  Width = 140 });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colItems",    HeaderText = "Ítems",     Width = 55 });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTotal",    HeaderText = "Total",     Width = 100 });
 
-            Controls.Add(split);
+            _gridVentas.CellFormatting += GridVentas_CellFormatting;
 
-            _gridVentas.SelectionChanged += (_, _) => LoadSelectedVenta();
-            _btnCrear.Click        += async (_, _) => await OnCrearVentaAsync();
-            _btnEliminar.Click     += async (_, _) => await OnEliminarVentaAsync();
-            _btnLimpiarVenta.Click += (_, _) => LimpiarVenta();
-            _btnAgregarDet.Click   += (_, _) => OnAgregarBorrador();
+            _bindingSource.DataSource = _appState.Ventas;
+            _gridVentas.DataSource    = _bindingSource;
+
+            Controls.Add(_gridVentas);      
+            Controls.Add(pnlResumen);       
+            Controls.Add(_gridDetalles);     
+            Controls.Add(grpComposicion);    
+            Controls.Add(grpAgregacion);     
         }
 
         public void RefreshReferenceData()
         {
-            void BindCombo(ComboBox cmb, IEnumerable<ComboItem> items)
+            _cmbCliente.Items.Clear();
+            foreach (var cli in _appState.Clientes.Where(c => c.Activo))
+                _cmbCliente.Items.Add(new ComboItem<Usuario>($"{cli.Nombre}", cli));
+
+            _cmbEmpleado.Items.Clear();
+            foreach (var emp in _appState.Empleados.Where(e => e.Activo))
+                _cmbEmpleado.Items.Add(new ComboItem<Usuario>($"{emp.Nombre}", emp));
+
+            _cmbProducto.Items.Clear();
+            foreach (var p in _appState.Productos.Where(p => p.Activo))
+                _cmbProducto.Items.Add(new ComboItem<Producto>($"{p.Nombre} — ${p.PrecioVenta:N2} (Stock: {p.StockActual})", p));
+        }
+
+        private void OnAnadirDetalleClick(object? sender, EventArgs e)
+        {
+            if (_cmbProducto.SelectedItem is not ComboItem<Producto> item)
             {
-                var old = cmb.SelectedValue;
-                cmb.DataSource = items.ToList();
-                cmb.DisplayMember = "Display";
-                cmb.ValueMember = "Value";
-                if (old != null) cmb.SelectedValue = old;
+                MessageBox.Show("Seleccione un producto.", "Aviso",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
-            BindCombo(_cmbCliente,  _state.Clientes.Select(c => new ComboItem(c.Nombre, c.Id)).Prepend(new ComboItem("-- Seleccione --", "")));
-            BindCombo(_cmbEmpleado, _state.Empleados.Select(e => new ComboItem(e.Nombre, e.Id)).Prepend(new ComboItem("-- Seleccione --", "")));
-            BindCombo(_cmbProducto, _state.Productos.Select(p => new ComboItem(p.Nombre, p.Codigo)).Prepend(new ComboItem("-- Seleccione --", "")));
+            var producto  = item.Value;
+            var cantidad  = (int)_numCantidad.Value;
+
+            if (producto.StockActual < cantidad)
+            {
+                MessageBox.Show(
+                    $"Stock insuficiente para '{producto.Nombre}'.\n" +
+                    $"Disponible: {producto.StockActual} | Solicitado: {cantidad}",
+                    "Stock insuficiente", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var existente = _detallesActuales.FirstOrDefault(d => d.Producto.Codigo == producto.Codigo);
+            if (existente != null)
+                existente.Cantidad += cantidad;
+            else
+                _detallesActuales.Add(new Detallesventum(producto, cantidad)); 
+
+            RefreshDetallesGrid();
+            _cmbProducto.SelectedIndex = -1;
+            _numCantidad.Value = 1;
         }
 
-        private void LimpiarVenta()
+        private void OnDetallesCellClick(object? sender, DataGridViewCellEventArgs e)
         {
-            _selectedVenta = null;
-            _txtCodigoVenta.Text = _txtCantidad.Text = "";
-            _cmbCliente.SelectedIndex = _cmbEmpleado.SelectedIndex = _cmbProducto.SelectedIndex = 0;
-            _txtCodigoVenta.ReadOnly = false;
-            _detallesBorrador.Clear();
-            _gridDetalles.DataSource = null;
-            _gridDetalles.DataSource = _detallesBorrador;
-            _errors.Clear();
+            if (e.RowIndex < 0) return;
+            if (_gridDetalles.Columns[e.ColumnIndex].Name == "colQuitar")
+            {
+                _detallesActuales.RemoveAt(e.RowIndex);
+                RefreshDetallesGrid();
+            }
         }
 
-        private void LoadSelectedVenta()
+        private void RefreshDetallesGrid()
         {
-            if (_gridVentas.CurrentRow?.DataBoundItem is not Venta v) { _selectedVenta = null; return; }
-            _selectedVenta = v;
-            _txtCodigoVenta.Text = v.Codigo.ToString();
-            _cmbCliente.SelectedValue = v.ClienteId ?? (object)"";
-            _cmbEmpleado.SelectedValue = v.EmpleadoId ?? (object)"";
-            _txtCodigoVenta.ReadOnly = true;
-            
-            _gridDetalles.DataSource = v.Detallesventa.ToList(); // Detalles guardados
+            _gridDetalles.Rows.Clear();
+            foreach (var d in _detallesActuales)
+            {
+                _gridDetalles.Rows.Add(
+                    d.Producto.Nombre,
+                    d.Cantidad,
+                    d.Producto.PrecioVenta.ToString("C"),
+                    $"{d.Producto.Impuesto * 100:0}%",
+                    d.TotalItem.ToString("C")
+                );
+            }
+
+            var subtotal = _detallesActuales.Sum(d => d.SubtotalItem);
+            var iva      = _detallesActuales.Sum(d => d.IVAItem);
+            var total    = _detallesActuales.Sum(d => d.TotalItem);
+
+            _lblSubtotal.Text = $"Subtotal: {subtotal:C}";
+            _lblIVA.Text      = $"  IVA: {iva:C}";
+            _lblTotal.Text    = $"  TOTAL: {total:C}";
         }
 
-        private void OnAgregarBorrador()
+        private async void OnConfirmarVentaClick(object? sender, EventArgs e)
         {
-            if (_selectedVenta != null) { MessageBox.Show("No puede modificar los detalles de una venta existente. Cree una nueva."); return; }
-            
-            if (_cmbProducto.SelectedValue is not int pId || pId == 0) { MessageBox.Show("Seleccione producto."); return; }
-            if (!Validators.ValidatePositiveInt(_txtCantidad.Text, "Cantidad", _errors, _txtCantidad, out var cant)) return;
+            if (_cmbCliente.SelectedItem is not ComboItem<Usuario> cliItem)
+            {
+                MessageBox.Show("Debe seleccionar un Usuario.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (_cmbEmpleado.SelectedItem is not ComboItem<Usuario> empItem)
+            {
+                MessageBox.Show("Debe seleccionar un Usuario/vendedor.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (_detallesActuales.Count == 0)
+            {
+                MessageBox.Show("Debe agregar al menos un producto a la venta.", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-            var prod = _state.Productos.First(p => p.Codigo == pId);
-            _detallesBorrador.Add(new Detallesventum { ProductoCodigo = pId, Cantidad = cant, PrecioUnitario = prod.Precio });
-            
-            _gridDetalles.DataSource = null;
-            _gridDetalles.DataSource = _detallesBorrador;
+            var stockError = _appState.ValidarStockParaVenta(_detallesActuales);
+            if (stockError != null)
+            {
+                MessageBox.Show($"Stock insuficiente: {stockError}", "Stock insuficiente",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var codigo = _appState.GetNextCodigoVenta();
+            var venta = new Venta(codigo, cliItem.Value, empItem.Value, _dtpFecha.Value);
+
+            var success = await GridActions.RunDatabaseOperationAsync(this, "Crear Venta", async () =>
+            {
+                await _appState.AddVentaAsync(venta, _detallesActuales);
+                venta.SaveToJson(GridActions.GetOutputPath("venta", venta.Codigo));
+            });
+
+            if (success)
+            {
+                RefreshReferenceData();
+                _lblCodigo.Text = $"#{_appState.GetNextCodigoVenta()}";
+                MessageBox.Show($"Venta #{codigo} creada.\nTotal: {venta.Detallesventa.Sum(d => d.Cantidad * d.Producto.PrecioVenta):C}",
+                    "Venta registrada", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LimpiarFormulario();
+            }
         }
 
-        private async Task OnCrearVentaAsync()
+        private void OnVerComprobanteClick(object? sender, EventArgs e)
         {
-            if (!Validators.ValidatePositiveInt(_txtCodigoVenta.Text, "Código", _errors, _txtCodigoVenta, out var cod)) return;
-            if (_cmbCliente.SelectedValue is not int cId || cId == 0) { MessageBox.Show("Seleccione cliente."); return; }
-            if (_cmbEmpleado.SelectedValue is not int eId || eId == 0) { MessageBox.Show("Seleccione empleado."); return; }
-            if (!_detallesBorrador.Any()) { MessageBox.Show("Agregue al menos un producto."); return; }
+            Venta? venta = _gridVentas.CurrentRow?.DataBoundItem as Venta;
+            if (venta == null)
+            {
+                MessageBox.Show("Seleccione una venta del historial para ver su comprobante.",
+                    "Sin selección", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
-            var v = new Venta { Codigo = cod, ClienteId = cId, EmpleadoId = eId, Fecha = DateTime.Now };
-            await GridActions.RunDatabaseOperationAsync(() => _state.AddVentaAsync(v, _detallesBorrador), msg => MessageBox.Show(msg, "Error"));
-            LimpiarVenta();
+            var frmComprobante = new Form
+            {
+                Text        = $"Comprobante de Venta #{venta.Codigo}",
+                Size        = new Size(520, 520),
+                StartPosition = FormStartPosition.CenterParent,
+                BackColor   = Color.White,
+                Font        = new Font("Courier New", 10f)
+            };
+            var txtComp = new TextBox
+            {
+                Multiline   = true,
+                ReadOnly    = true,
+                Dock        = DockStyle.Fill,
+                Font        = new Font("Courier New", 10f),
+                Text        = venta.GenerarTextoComprobante(),
+                ScrollBars  = ScrollBars.Vertical,
+                BackColor   = Color.White,
+                ForeColor   = FormLayoutHelper.TextColor,
+                BorderStyle = BorderStyle.None,
+                Padding     = new Padding(10)
+            };
+            frmComprobante.Controls.Add(txtComp);
+            frmComprobante.ShowDialog(this);
         }
 
-        private async Task OnEliminarVentaAsync()
+        private void OnExportClick(object? sender, EventArgs e) =>
+            GridActions.ExportSelected<Venta>(_gridVentas, "venta.json", (v, path) => v.SaveToJson(path));
+
+        private void LimpiarFormulario()
         {
-            if (_selectedVenta is null) return;
-            if (MessageBox.Show($"¿Eliminar venta {_selectedVenta.Codigo} ({_selectedVenta.Detallesventa.Count} items)?", "Confirmar", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
-            await GridActions.RunDatabaseOperationAsync(() => _state.DeleteVentaAsync(_selectedVenta), msg => MessageBox.Show(msg, "Error"));
-            LimpiarVenta();
+            _cmbCliente.SelectedIndex  = -1;
+            _cmbEmpleado.SelectedIndex = -1;
+            _cmbProducto.SelectedIndex = -1;
+            _numCantidad.Value         = 1;
+            _dtpFecha.Value            = DateTime.Now;
+            _detallesActuales.Clear();
+            RefreshDetallesGrid();
+        }
+
+        private void GridVentas_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            if (_gridVentas.Rows[e.RowIndex].DataBoundItem is not Venta v) return;
+
+            switch (_gridVentas.Columns[e.ColumnIndex].Name)
+            {
+                case "colCliente":
+                    e.Value = v.Cliente?.Nombre ?? "—";
+                    e.FormattingApplied = true;
+                    break;
+                case "colEmpleado":
+                    e.Value = v.Empleado?.Nombre ?? "—";
+                    e.FormattingApplied = true;
+                    break;
+                case "colItems":
+                    e.Value = v.Detallesventa.Sum(d => d.Cantidad).ToString();
+                    e.FormattingApplied = true;
+                    break;
+                case "colTotal":
+                    e.Value = v.Detallesventa.Sum(d => d.Cantidad * d.Producto.PrecioVenta).ToString("C");
+                    e.FormattingApplied = true;
+                    break;
+            }
         }
     }
 }
+
+

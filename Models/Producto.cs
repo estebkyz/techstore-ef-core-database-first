@@ -9,13 +9,19 @@ public partial class Producto
 
     public string Nombre { get; set; } = null!;
 
-    public string? Descripcion { get; set; }
+    public string Categoria { get; set; } = null!;
 
-    public decimal Precio { get; set; }
+    public string Descripcion { get; set; } = null!;
 
-    public int Stock { get; set; }
+    public decimal PrecioVenta { get; set; }
+
+    public int StockActual { get; set; }
+
+    public int StockMinimo { get; set; }
+
+    public decimal Impuesto { get; set; }
+
+    public bool Activo { get; set; }
 
     public virtual ICollection<Detallesventum> Detallesventa { get; set; } = new List<Detallesventum>();
-
-    public virtual ICollection<Categoria> CategoriaCodigos { get; set; } = new List<Categoria>();
 }

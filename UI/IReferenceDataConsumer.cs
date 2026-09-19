@@ -1,7 +1,9 @@
 namespace TiendaLinea.UI
 {
-    public interface IReferenceDataConsumer
+    internal interface IReferenceDataConsumer
     {
         void RefreshReferenceData();
     }
 }
+
+

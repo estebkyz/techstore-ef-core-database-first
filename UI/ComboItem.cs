@@ -1,16 +1,18 @@
 namespace TiendaLinea.UI
 {
-    public class ComboItem
+    public class ComboItem<T>
     {
-        public string Display { get; }
-        public object Value   { get; }
+        public string Text { get; }
+        public T Value { get; }
 
-        public ComboItem(string display, object value)
+        public ComboItem(string text, T value)
         {
-            Display = display;
-            Value   = value;
+            Text = text;
+            Value = value;
         }
 
-        public override string ToString() => Display;
+        public override string ToString() => Text;
     }
 }
+
+

@@ -1,198 +1,59 @@
+using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TiendaLinea.Data;
 using TiendaLinea.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace TiendaLinea.UI
 {
     public sealed class AppState
     {
-        public BindingList<Usuario>  Clientes        { get; } = new();
-        public BindingList<Usuario>  Empleados       { get; } = new();
-        public BindingList<Usuario>  Administradores { get; } = new();
-        public BindingList<Producto> Productos       { get; } = new();
-        public BindingList<Venta>    Ventas          { get; } = new();
-        public BindingList<Categoria> Categorias     { get; } = new();
-
-        public void Clear()
-        {
-            Clientes.Clear();
-            Empleados.Clear();
-            Administradores.Clear();
-            Productos.Clear();
-            Ventas.Clear();
-            Categorias.Clear();
-        }
+        public BindingList<Producto> Productos { get; } = new();
+        public BindingList<Usuario> Clientes { get; } = new();
+        public BindingList<Usuario> Empleados { get; } = new();
+        public BindingList<Usuario> Administradores { get; } = new();
+        public BindingList<Venta> Ventas { get; } = new();
 
         public async Task LoadAllFromDatabaseAsync()
         {
             using var db = new TechStoreDbContext();
-
-            var usuarios = await db.Usuarios.OrderBy(u => u.Id).ToListAsync();
-            var productos = await db.Productos
-                .Include(p => p.CategoriaCodigos)
-                .OrderBy(p => p.Codigo)
-                .ToListAsync();
-            var ventas = await db.Ventas
+            
+            var prods = await db.Productos.OrderBy(p => p.Codigo).ToListAsync();
+            var usrs = await db.Usuarios.OrderBy(u => u.Codigo).ToListAsync();
+            var vents = await db.Ventas
                 .Include(v => v.Cliente)
                 .Include(v => v.Empleado)
                 .Include(v => v.Detallesventa)
-                    .ThenInclude(d => d.ProductoCodigoNavigation)
+                    .ThenInclude(d => d.Producto)
                 .OrderBy(v => v.Codigo)
                 .ToListAsync();
-            var categorias = await db.Categorias.OrderBy(c => c.Codigo).ToListAsync();
 
-            Clear();
-            foreach (var u in usuarios)
+            Productos.Clear();
+            foreach (var p in prods) Productos.Add(p);
+
+            Clientes.Clear();
+            Empleados.Clear();
+            Administradores.Clear();
+            foreach (var u in usrs)
             {
-                switch (u.UserType)
+                switch (u.TipoUsuario)
                 {
-                    case UserTypes.Cliente:       Clientes.Add(u);        break;
-                    case UserTypes.Empleado:      Empleados.Add(u);       break;
-                    case UserTypes.Administrador: Administradores.Add(u); break;
+                    case "Cliente": Clientes.Add(u); break;
+                    case "Empleado": Empleados.Add(u); break;
+                    case "Administrador": Administradores.Add(u); break;
                 }
             }
-            foreach (var p in productos)  Productos.Add(p);
-            foreach (var v in ventas)     Ventas.Add(v);
-            foreach (var c in categorias) Categorias.Add(c);
+
+            Ventas.Clear();
+            foreach (var v in vents) Ventas.Add(v);
         }
 
-        public async Task AddClienteAsync(Usuario cliente)
-        {
-            using var db = new TechStoreDbContext();
-            db.Usuarios.Add(cliente);
-            await db.SaveChangesAsync();
-            Clientes.Add(cliente);
-        }
-
-        public async Task UpdateClienteAsync(Usuario cliente)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == cliente.Id);
-            if (tracked is not null)
-            {
-                tracked.Nombre    = cliente.Nombre;
-                tracked.Correo    = cliente.Correo;
-                tracked.Direccion = cliente.Direccion;
-                await db.SaveChangesAsync();
-            }
-            Clientes.ResetBindings();
-        }
-
-        public async Task DeleteClienteAsync(Usuario cliente)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == cliente.Id);
-            if (tracked is not null)
-            {
-                db.Usuarios.Remove(tracked);
-                await db.SaveChangesAsync();
-            }
-            await LoadAllFromDatabaseAsync();
-        }
-
-        public async Task AddEmpleadoAsync(Usuario empleado)
-        {
-            using var db = new TechStoreDbContext();
-            db.Usuarios.Add(empleado);
-            await db.SaveChangesAsync();
-            Empleados.Add(empleado);
-        }
-
-        public async Task UpdateEmpleadoAsync(Usuario empleado)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == empleado.Id);
-            if (tracked is not null)
-            {
-                tracked.Nombre             = empleado.Nombre;
-                tracked.Correo             = empleado.Correo;
-                tracked.Cargo              = empleado.Cargo;
-                tracked.ContactoTelefono   = empleado.ContactoTelefono;
-                tracked.ContactoDireccion  = empleado.ContactoDireccion;
-                await db.SaveChangesAsync();
-            }
-            Empleados.ResetBindings();
-        }
-
-        public async Task DeleteEmpleadoAsync(Usuario empleado)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == empleado.Id);
-            if (tracked is not null)
-            {
-                db.Usuarios.Remove(tracked);
-                await db.SaveChangesAsync();
-            }
-            await LoadAllFromDatabaseAsync();
-        }
-
-        public async Task AddAdminAsync(Usuario admin)
-        {
-            using var db = new TechStoreDbContext();
-            db.Usuarios.Add(admin);
-            await db.SaveChangesAsync();
-            Administradores.Add(admin);
-        }
-
-        public async Task UpdateAdminAsync(Usuario admin)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == admin.Id);
-            if (tracked is not null)
-            {
-                tracked.Nombre       = admin.Nombre;
-                tracked.Correo       = admin.Correo;
-                tracked.NivelAcceso  = admin.NivelAcceso;
-                await db.SaveChangesAsync();
-            }
-            Administradores.ResetBindings();
-        }
-
-        public async Task DeleteAdminAsync(Usuario admin)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == admin.Id);
-            if (tracked is not null)
-            {
-                db.Usuarios.Remove(tracked);
-                await db.SaveChangesAsync();
-            }
-            Administradores.Remove(admin);
-        }
-
-        public async Task AddCategoriaAsync(Categoria categoria)
-        {
-            using var db = new TechStoreDbContext();
-            db.Categorias.Add(categoria);
-            await db.SaveChangesAsync();
-            Categorias.Add(categoria);
-        }
-
-        public async Task UpdateCategoriaAsync(Categoria categoria)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Categorias.FirstOrDefaultAsync(c => c.Codigo == categoria.Codigo);
-            if (tracked is not null)
-            {
-                tracked.Nombre = categoria.Nombre;
-                await db.SaveChangesAsync();
-            }
-            Categorias.ResetBindings();
-        }
-
-        public async Task DeleteCategoriaAsync(Categoria categoria)
-        {
-            using var db = new TechStoreDbContext();
-            var tracked = await db.Categorias.FirstOrDefaultAsync(c => c.Codigo == categoria.Codigo);
-            if (tracked is not null)
-            {
-                db.Categorias.Remove(tracked);
-                await db.SaveChangesAsync();
-            }
-            await LoadAllFromDatabaseAsync();
-        }
-
+        // --- PRODUCTOS ---
+        public int GetNextCodigoProducto() => Productos.Count > 0 ? Productos.Max(p => p.Codigo) + 1 : 101;
+        
         public async Task AddProductoAsync(Producto producto)
         {
             using var db = new TechStoreDbContext();
@@ -205,69 +66,89 @@ namespace TiendaLinea.UI
         {
             using var db = new TechStoreDbContext();
             var tracked = await db.Productos.FirstOrDefaultAsync(p => p.Codigo == producto.Codigo);
-            if (tracked is not null)
+            if (tracked != null)
             {
-                tracked.Nombre      = producto.Nombre;
+                tracked.Nombre = producto.Nombre;
+                tracked.Categoria = producto.Categoria;
                 tracked.Descripcion = producto.Descripcion;
-                tracked.Precio      = producto.Precio;
-                tracked.Stock       = producto.Stock;
+                tracked.PrecioVenta = producto.PrecioVenta;
+                tracked.StockActual = producto.StockActual;
+                tracked.StockMinimo = producto.StockMinimo;
+                tracked.Impuesto = producto.Impuesto;
+                tracked.Activo = producto.Activo;
                 await db.SaveChangesAsync();
             }
             Productos.ResetBindings();
         }
-
-        public async Task DeleteProductoAsync(Producto producto)
+        
+        public async Task<bool> TieneVentasAsociadasAsync(Producto producto)
         {
             using var db = new TechStoreDbContext();
-            var tracked = await db.Productos.FirstOrDefaultAsync(p => p.Codigo == producto.Codigo);
-            if (tracked is not null)
-            {
-                db.Productos.Remove(tracked);
-                await db.SaveChangesAsync();
-            }
-            await LoadAllFromDatabaseAsync();
+            return await db.Detallesventa.AnyAsync(d => d.ProductoId == producto.Codigo);
         }
 
-        public async Task AddCategoriaToProductoAsync(Producto producto, Categoria categoria)
+        // --- USUARIOS GENERAL ---
+        public int GetNextCodigoUsuario() => 
+            Math.Max(
+                Math.Max(
+                    Clientes.Count > 0 ? Clientes.Max(c => c.Codigo) : 0,
+                    Empleados.Count > 0 ? Empleados.Max(e => e.Codigo) : 0
+                ),
+                Administradores.Count > 0 ? Administradores.Max(a => a.Codigo) : 0
+            ) + 1;
+
+        public async Task<bool> ExisteCorreoAsync(string correo)
         {
             using var db = new TechStoreDbContext();
-            var trackedProd = await db.Productos
-                .Include(p => p.CategoriaCodigos)
-                .FirstOrDefaultAsync(p => p.Codigo == producto.Codigo)
-                ?? throw new InvalidOperationException($"El producto {producto.Codigo} ya no existe.");
-            var trackedCat = await db.Categorias.FirstOrDefaultAsync(c => c.Codigo == categoria.Codigo)
-                ?? throw new InvalidOperationException($"La categoría {categoria.Codigo} ya no existe.");
-
-            if (trackedProd.CategoriaCodigos.All(c => c.Codigo != trackedCat.Codigo))
-            {
-                trackedProd.CategoriaCodigos.Add(trackedCat);
-                await db.SaveChangesAsync();
-            }
-
-            if (producto.CategoriaCodigos.All(c => c.Codigo != categoria.Codigo))
-                producto.CategoriaCodigos.Add(categoria);
-
-            Productos.ResetBindings();
+            return await db.Usuarios.AnyAsync(u => u.Correo == correo.Trim().ToLower());
         }
 
-        public async Task AddVentaAsync(Venta venta, IEnumerable<Detallesventum> detalles)
+        public async Task AddClienteAsync(Usuario c) { using var db = new TechStoreDbContext(); db.Usuarios.Add(c); await db.SaveChangesAsync(); Clientes.Add(c); }
+        public async Task UpdateClienteAsync(Usuario c) { using var db = new TechStoreDbContext(); db.Usuarios.Update(c); await db.SaveChangesAsync(); Clientes.ResetBindings(); }
+
+        public async Task AddEmpleadoAsync(Usuario e) { using var db = new TechStoreDbContext(); db.Usuarios.Add(e); await db.SaveChangesAsync(); Empleados.Add(e); }
+        public async Task UpdateEmpleadoAsync(Usuario e) { using var db = new TechStoreDbContext(); db.Usuarios.Update(e); await db.SaveChangesAsync(); Empleados.ResetBindings(); }
+
+        public async Task AddAdministradorAsync(Usuario a) { using var db = new TechStoreDbContext(); db.Usuarios.Add(a); await db.SaveChangesAsync(); Administradores.Add(a); }
+        public async Task UpdateAdministradorAsync(Usuario a) { using var db = new TechStoreDbContext(); db.Usuarios.Update(a); await db.SaveChangesAsync(); Administradores.ResetBindings(); }
+
+        // --- VENTAS ---
+        public int GetNextCodigoVenta() => Ventas.Count > 0 ? Ventas.Max(v => v.Codigo) + 1 : 1001;
+
+        public async Task AddVentaAsync(Venta venta, IList<Detallesventum> detalles)
         {
             using var db = new TechStoreDbContext();
+            
             db.Ventas.Add(venta);
             foreach (var d in detalles)
             {
-                d.VentaCodigo = venta.Codigo;
+                d.VentaId = venta.Codigo;
                 db.Detallesventa.Add(d);
+                
+                var trackedProd = await db.Productos.FirstOrDefaultAsync(p => p.Codigo == d.ProductoId);
+                if (trackedProd != null) trackedProd.StockActual -= d.Cantidad;
             }
+            
             await db.SaveChangesAsync();
             await LoadAllFromDatabaseAsync();
+        }
+
+        public string? ValidarStockParaVenta(IList<Detallesventum> detalles)
+        {
+            foreach (var d in detalles)
+            {
+                var prod = Productos.FirstOrDefault(p => p.Codigo == d.ProductoId);
+                if (prod != null && prod.StockActual < d.Cantidad)
+                    return $@"'{prod.Nombre}' — disponible: {prod.StockActual}, requerido: {d.Cantidad}";
+            }
+            return null;
         }
 
         public async Task DeleteVentaAsync(Venta venta)
         {
             using var db = new TechStoreDbContext();
             var tracked = await db.Ventas.FirstOrDefaultAsync(v => v.Codigo == venta.Codigo);
-            if (tracked is not null)
+            if (tracked != null)
             {
                 db.Ventas.Remove(tracked);
                 await db.SaveChangesAsync();
@@ -277,56 +158,34 @@ namespace TiendaLinea.UI
 
         public async Task LoadDemoDataAsync()
         {
-            await ClearDatabaseAsync();
-            Clear();
-
-            var cli1 = new Usuario { Id = 1, Nombre = "Carlos Lopez",  Correo = "carlos@correo.com",        UserType = UserTypes.Cliente,       Direccion = "Calle 100 #20-30" };
-            var cli2 = new Usuario { Id = 2, Nombre = "María García",  Correo = "maria@correo.com",         UserType = UserTypes.Cliente,       Direccion = "Av. 5 #10-15" };
-            var emp1 = new Usuario { Id = 3, Nombre = "Juan Pérez",    Correo = "juan.perez@techstore.com", UserType = UserTypes.Empleado,      Cargo = "Vendedor",    ContactoTelefono = "3001234567", ContactoDireccion = "Calle 50 #30" };
-            var adm1 = new Usuario { Id = 4, Nombre = "Ana Martínez",  Correo = "ana.admin@techstore.com",  UserType = UserTypes.Administrador, NivelAcceso = 5 };
-
-            await AddClienteAsync(cli1);
-            await AddClienteAsync(cli2);
-            await AddEmpleadoAsync(emp1);
-            await AddAdminAsync(adm1);
-
-            var catComp  = new Categoria { Codigo = "COMP",  Nombre = "Computación" };
-            var catAcc   = new Categoria { Codigo = "ACC",   Nombre = "Accesorios" };
-            var catAudio = new Categoria { Codigo = "AUDIO", Nombre = "Audio" };
-
-            await AddCategoriaAsync(catComp);
-            await AddCategoriaAsync(catAcc);
-            await AddCategoriaAsync(catAudio);
-
-            var prod1 = new Producto { Codigo = 101, Nombre = "Laptop XPS 15",        Descripcion = "Dell 16GB RAM, SSD 512GB", Precio = 1500m, Stock = 10 };
-            var prod2 = new Producto { Codigo = 102, Nombre = "Mouse Inalámbrico",    Descripcion = "Mouse óptico inalámbrico", Precio = 25m,   Stock = 50 };
-            var prod3 = new Producto { Codigo = 103, Nombre = "Teclado Mecánico RGB", Descripcion = "Teclado mecánico gamer",   Precio = 75m,   Stock = 30 };
-
-            await AddProductoAsync(prod1);
-            await AddProductoAsync(prod2);
-            await AddProductoAsync(prod3);
-
-            await AddCategoriaToProductoAsync(prod1, catComp);
-            await AddCategoriaToProductoAsync(prod2, catAcc);
-            await AddCategoriaToProductoAsync(prod3, catAcc);
-
-            var venta1 = new Venta { Codigo = 1001, Fecha = DateTime.Now.AddDays(-1), ClienteId = cli1.Id, EmpleadoId = emp1.Id };
-            var detalles1 = new List<Detallesventum>
-            {
-                new() { ProductoCodigo = prod1.Codigo, Cantidad = 1, PrecioUnitario = prod1.Precio },
-                new() { ProductoCodigo = prod2.Codigo, Cantidad = 2, PrecioUnitario = prod2.Precio }
-            };
-            await AddVentaAsync(venta1, detalles1);
-        }
-
-        public static async Task ClearDatabaseAsync()
-        {
             using var db = new TechStoreDbContext();
+            
             await db.Detallesventa.ExecuteDeleteAsync();
             await db.Ventas.ExecuteDeleteAsync();
             await db.Productos.ExecuteDeleteAsync();
-            await db.Categorias.ExecuteDeleteAsync();
             await db.Usuarios.ExecuteDeleteAsync();
+
+            var admin1 = new Usuario { Codigo = 1, Nombre = "Ana Martinez", Correo = "ana.admin@techstore.com", TipoUsuario = "Administrador" };
+            var emp1 = new Usuario { Codigo = 2, Nombre = "Juan Perez", Correo = "juan.perez@techstore.com", TipoUsuario = "Empleado" };
+            var cli1 = new Usuario { Codigo = 3, Nombre = "Carlos Lopez", Correo = "carlos@correo.com", TipoUsuario = "Cliente", Direccion = "Calle 100 #20-30" };
+
+            var prod1 = new Producto { Codigo = 101, Nombre = "Laptop XPS 15", Categoria = "Computación", Descripcion = "Laptop Dell 16GB RAM", PrecioVenta = 1500m, StockActual = 10, StockMinimo = 2, Impuesto = 0.19m, Activo = true };
+            var prod2 = new Producto { Codigo = 102, Nombre = "Mouse Inalámbrico", Categoria = "Accesorios", Descripcion = "Mouse óptico", PrecioVenta = 25m, StockActual = 50, StockMinimo = 5, Impuesto = 0.19m, Activo = true };
+            
+            db.Usuarios.AddRange(admin1, emp1, cli1);
+            db.Productos.AddRange(prod1, prod2);
+            await db.SaveChangesAsync();
+
+            var venta1 = new Venta { Codigo = 1001, ClienteId = cli1.Codigo, EmpleadoId = emp1.Codigo, FechaVenta = DateTime.Now.AddDays(-1) };
+            db.Ventas.Add(venta1);
+            
+            var det1 = new Detallesventum { VentaId = venta1.Codigo, ProductoId = prod1.Codigo, Cantidad = 1 };
+            db.Detallesventa.Add(det1);
+            prod1.StockActual -= 1;
+            
+            await db.SaveChangesAsync();
+            await LoadAllFromDatabaseAsync();
         }
     }
 }
+
