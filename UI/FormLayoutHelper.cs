@@ -125,6 +125,22 @@ namespace TiendaLinea.UI
             grid.RowTemplate.Height                    = 28;
             grid.SelectionMode                         = DataGridViewSelectionMode.FullRowSelect;
             grid.MultiSelect                           = false;
+            grid.AllowUserToAddRows                    = false;
+            
+            grid.DataBindingComplete += (s, e) =>
+            {
+                var g = (DataGridView)s!;
+                foreach (DataGridViewColumn col in g.Columns)
+                {
+                    if (col.Name.StartsWith("Venta") || 
+                        col.Name == "ClaveHash" || 
+                        col.Name == "TipoUsuario" || 
+                        col.Name == "Detallesventa")
+                    {
+                        col.Visible = false;
+                    }
+                }
+            };
         }
 
         public static void StyleGroupBox(GroupBox grp)

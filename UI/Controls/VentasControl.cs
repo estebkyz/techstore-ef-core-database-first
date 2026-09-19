@@ -42,7 +42,7 @@ namespace TiendaLinea.UI.Controls
         {
             var grpAgregacion = new GroupBox
             {
-                Text    = "Seleccionar Usuario y Usuario ya existentes",
+                Text    = "Seleccionar Cliente y Empleado ya existentes",
                 Dock    = DockStyle.Top,
                 Height  = 90,
                 Padding = new Padding(8, 4, 8, 4)
@@ -71,11 +71,11 @@ namespace TiendaLinea.UI.Controls
                 ForeColor = FormLayoutHelper.TextColor, Margin = new Padding(0, 4, 6, 0)
             }, col, 0);
 
-            AddLabel("Usuario:", 0);
+            AddLabel("Cliente:", 0);
             _cmbCliente.Dock = DockStyle.Fill;
             tblAgr.Controls.Add(_cmbCliente, 1, 0);
 
-            AddLabel("Usuario:", 2);
+            AddLabel("Empleado:", 2);
             _cmbEmpleado.Dock = DockStyle.Fill;
             tblAgr.Controls.Add(_cmbEmpleado, 3, 0);
 
