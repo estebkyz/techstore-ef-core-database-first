@@ -1,0 +1,15 @@
+## .gitignore — TechStore ORM Database-First
+
+# Credenciales — NUNCA versionar
+.env
+
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+
+# Obsidian
+.obsidian/
