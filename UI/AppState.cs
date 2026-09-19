@@ -119,9 +119,14 @@ namespace TiendaLinea.UI
         {
             using var db = new TechStoreDbContext();
             
+            // Limpiar referencias a objetos para que EF Core no intente insertarlos de nuevo
+            venta.Cliente = null!;
+            venta.Empleado = null!;
+            
             db.Ventas.Add(venta);
             foreach (var d in detalles)
             {
+                d.Producto = null!;
                 d.VentaId = venta.Codigo;
                 db.Detallesventa.Add(d);
                 
