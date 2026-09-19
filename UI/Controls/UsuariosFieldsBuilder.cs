@@ -18,7 +18,13 @@ namespace TiendaLinea.UI.Controls
         {
             var fields = new UsuarioFields
             {
-                NumCodigo = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 },
+                NumCodigo = new NumericUpDown { 
+                    Minimum = 1, 
+                    Maximum = 999999, 
+                    Value = 1,
+                    ReadOnly = true,
+                    BackColor = System.Drawing.Color.FromArgb(232, 240, 254)
+                },
                 TxtNombre = new TextBox(),
                 TxtCorreo = new TextBox(),
                 TxtClave = new TextBox { PasswordChar = '*' },
