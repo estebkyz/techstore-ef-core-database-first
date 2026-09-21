@@ -108,7 +108,7 @@ namespace TiendaLinea.UI.Controls
                 Codigo = codigo,
                 Nombre = _baseFields.TxtNombre.Text.Trim(),
                 Correo = _baseFields.TxtCorreo.Text.Trim(),
-                Clave = _baseFields.TxtClave.Text.Trim(),
+                ClaveHash = _baseFields.TxtClave.Text.Trim(),
                 Direccion = _txtDireccion.Text.Trim(),
                 Activo = _baseFields.ChkActivo.Checked,
                 TipoUsuario = "Cliente"
@@ -134,5 +134,6 @@ namespace TiendaLinea.UI.Controls
             GridActions.ExportSelected<Usuario>(_grid, "Usuario.json", (c, path) => c.SaveToJson(path));
     }
 }
+
 
 

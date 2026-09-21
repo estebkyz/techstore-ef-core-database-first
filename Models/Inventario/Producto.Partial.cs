@@ -9,7 +9,6 @@ namespace TiendaLinea.Models.Inventario
     {
         public Producto() { }
 
-        // Constructor parametrizado que la UI antigua usaba
         public Producto(int codigo, string nombre, string categoria, string descripcion, decimal precioVenta, int stockActual, int stockMinimo, decimal impuesto, bool activo)
         {
             Codigo = codigo;
@@ -23,10 +22,8 @@ namespace TiendaLinea.Models.Inventario
             Activo = activo;
         }
 
-        // Propiedad calculada que la UI espera para pintar la fila
         public bool StockBajo => StockActual <= StockMinimo;
 
-        // Método vacío para compatibilidad con la exportación antigua
         public void SaveToJson(string path) { }
     }
 }
