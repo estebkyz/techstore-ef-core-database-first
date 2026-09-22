@@ -1,4 +1,4 @@
-using TiendaLinea.Models.Inventario;
+﻿using TiendaLinea.Models.Inventario;
 using TiendaLinea.Models.Usuarios;
 using TiendaLinea.Models.Ventas;
 using System;
@@ -15,9 +15,7 @@ public partial class AppDbContext : DbContext
     {
     }
 
-    public virtual DbSet<Detallesventum> Detallesventa { get; set; }
-
-    
+    public virtual DbSet<DetalleVenta> Detallesventa { get; set; }
 
     public virtual DbSet<Producto> Productos { get; set; }
 
@@ -31,7 +29,7 @@ public partial class AppDbContext : DbContext
             .UseCollation("utf8mb4_unicode_ci")
             .HasCharSet("utf8mb4");
 
-        modelBuilder.Entity<Detallesventum>(entity =>
+        modelBuilder.Entity<DetalleVenta>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
@@ -57,8 +55,6 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.VentaId)
                 .HasConstraintName("FK_DetallesVenta_Ventas_VentaId");
         });
-
-        
 
         modelBuilder.Entity<Producto>(entity =>
         {
@@ -94,6 +90,7 @@ public partial class AppDbContext : DbContext
                 .ValueGeneratedNever()
                 .HasColumnType("int(11)");
             entity.Property(e => e.ClaveHash).HasMaxLength(128);
+            entity.Property(e => e.Comuna).HasMaxLength(45);
             entity.Property(e => e.Correo).HasMaxLength(200);
             entity.Property(e => e.Direccion).HasMaxLength(300);
             entity.Property(e => e.Nombre).HasMaxLength(150);
@@ -135,5 +132,7 @@ public partial class AppDbContext : DbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
+
 
 

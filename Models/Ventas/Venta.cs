@@ -1,4 +1,4 @@
-using TiendaLinea.Models.Inventario;
+﻿using TiendaLinea.Models.Inventario;
 using TiendaLinea.Models.Usuarios;
 using TiendaLinea.Models.Ventas;
 using System;
@@ -18,9 +18,12 @@ public partial class Venta
 
     public virtual Usuario Cliente { get; set; } = null!;
 
-    public virtual ICollection<Detallesventum> Detallesventa { get; set; } = new List<Detallesventum>();
+    public virtual ICollection<DetalleVenta> Detallesventa { get; set; } = new List<DetalleVenta>();
 
     public virtual Usuario Empleado { get; set; } = null!;
 }
+
+
+
 
 

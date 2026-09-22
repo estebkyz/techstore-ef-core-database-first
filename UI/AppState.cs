@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -116,7 +116,7 @@ namespace TiendaLinea.UI
         // --- VENTAS ---
         public int GetNextCodigoVenta() => Ventas.Count > 0 ? Ventas.Max(v => v.Codigo) + 1 : 1001;
 
-        public async Task AddVentaAsync(Venta venta, IList<Detallesventum> detalles)
+        public async Task AddVentaAsync(Venta venta, IList<DetalleVenta> detalles)
         {
             using var db = new AppDbContext();
             
@@ -138,13 +138,13 @@ namespace TiendaLinea.UI
             await LoadAllFromDatabaseAsync();
         }
 
-        public string? ValidarStockParaVenta(IList<Detallesventum> detalles)
+        public string? ValidarStockParaVenta(IList<DetalleVenta> detalles)
         {
             foreach (var d in detalles)
             {
                 var prod = Productos.FirstOrDefault(p => p.Codigo == d.ProductoId);
                 if (prod != null && prod.StockActual < d.Cantidad)
-                    return $@"'{prod.Nombre}' — disponible: {prod.StockActual}, requerido: {d.Cantidad}";
+                    return $@"'{prod.Nombre}' â€” disponible: {prod.StockActual}, requerido: {d.Cantidad}";
             }
             return null;
         }
@@ -174,8 +174,8 @@ namespace TiendaLinea.UI
             var emp1 = new Usuario { Codigo = 2, Nombre = "Juan Perez", Correo = "juan.perez@techstore.com", TipoUsuario = "Empleado" };
             var cli1 = new Usuario { Codigo = 3, Nombre = "Carlos Lopez", Correo = "carlos@correo.com", TipoUsuario = "Cliente", Direccion = "Calle 100 #20-30" };
 
-            var prod1 = new Producto { Codigo = 101, Nombre = "Laptop XPS 15", Categoria = "Computación", Descripcion = "Laptop Dell 16GB RAM", PrecioVenta = 1500m, StockActual = 10, StockMinimo = 2, Impuesto = 0.19m, Activo = true };
-            var prod2 = new Producto { Codigo = 102, Nombre = "Mouse Inalámbrico", Categoria = "Accesorios", Descripcion = "Mouse óptico", PrecioVenta = 25m, StockActual = 50, StockMinimo = 5, Impuesto = 0.19m, Activo = true };
+            var prod1 = new Producto { Codigo = 101, Nombre = "Laptop XPS 15", Categoria = "ComputaciÃ³n", Descripcion = "Laptop Dell 16GB RAM", PrecioVenta = 1500m, StockActual = 10, StockMinimo = 2, Impuesto = 0.19m, Activo = true };
+            var prod2 = new Producto { Codigo = 102, Nombre = "Mouse InalÃ¡mbrico", Categoria = "Accesorios", Descripcion = "Mouse Ã³ptico", PrecioVenta = 25m, StockActual = 50, StockMinimo = 5, Impuesto = 0.19m, Activo = true };
             
             db.Usuarios.AddRange(admin1, emp1, cli1);
             db.Productos.AddRange(prod1, prod2);
@@ -184,7 +184,7 @@ namespace TiendaLinea.UI
             var venta1 = new Venta { Codigo = 1001, ClienteId = cli1.Codigo, EmpleadoId = emp1.Codigo, FechaVenta = DateTime.Now.AddDays(-1) };
             db.Ventas.Add(venta1);
             
-            var det1 = new Detallesventum { VentaId = venta1.Codigo, ProductoId = prod1.Codigo, Cantidad = 1 };
+            var det1 = new DetalleVenta { VentaId = venta1.Codigo, ProductoId = prod1.Codigo, Cantidad = 1 };
             db.Detallesventa.Add(det1);
             prod1.StockActual -= 1;
             
@@ -193,5 +193,6 @@ namespace TiendaLinea.UI
         }
     }
 }
+
 
 

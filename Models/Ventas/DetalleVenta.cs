@@ -1,4 +1,4 @@
-using TiendaLinea.Models.Inventario;
+﻿using TiendaLinea.Models.Inventario;
 using TiendaLinea.Models.Usuarios;
 using TiendaLinea.Models.Ventas;
 using System;
@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace TiendaLinea.Models.Ventas;
 
-public partial class Detallesventum
+public partial class DetalleVenta
 {
     public int Id { get; set; }
 
@@ -20,5 +20,8 @@ public partial class Detallesventum
 
     public virtual Venta Venta { get; set; } = null!;
 }
+
+
+
 
 

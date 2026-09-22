@@ -1,4 +1,4 @@
-using TiendaLinea.Models.Inventario;
+﻿using TiendaLinea.Models.Inventario;
 using TiendaLinea.Models.Usuarios;
 using TiendaLinea.Models.Ventas;
 using System;
@@ -26,7 +26,10 @@ public partial class Producto
 
     public bool Activo { get; set; }
 
-    public virtual ICollection<Detallesventum> Detallesventa { get; set; } = new List<Detallesventum>();
+    public virtual ICollection<DetalleVenta> Detallesventa { get; set; } = new List<DetalleVenta>();
 }
+
+
+
 
 

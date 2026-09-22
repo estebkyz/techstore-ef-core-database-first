@@ -1,4 +1,4 @@
-using TiendaLinea.Models.Inventario;
+﻿using TiendaLinea.Models.Inventario;
 using TiendaLinea.Models.Usuarios;
 using TiendaLinea.Models.Ventas;
 using System;
@@ -6,10 +6,10 @@ using System.Linq;
 
 namespace TiendaLinea.Models.Ventas
 {
-    public partial class Detallesventum
+    public partial class DetalleVenta
     {
-        public Detallesventum() {}
-        public Detallesventum(Producto p, int cantidad)
+        public DetalleVenta() {}
+        public DetalleVenta(Producto p, int cantidad)
         {
             Producto = p;
             ProductoId = p.Codigo;
@@ -21,6 +21,7 @@ namespace TiendaLinea.Models.Ventas
         public decimal TotalItem => SubtotalItem + IVAItem;
     }
 }
+
 
 
 

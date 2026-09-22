@@ -24,9 +24,10 @@ namespace TiendaLinea.Models.Inventario
 
         public bool StockBajo => StockActual <= StockMinimo;
 
-        public void SaveToJson(string path) { }
+                public void SaveToJson(string path) { System.IO.File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })); }
     }
 }
+
 
 
 

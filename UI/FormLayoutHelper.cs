@@ -133,9 +133,10 @@ namespace TiendaLinea.UI
                 foreach (DataGridViewColumn col in g.Columns)
                 {
                     if (col.Name.StartsWith("Venta") || 
+                        col.Name.StartsWith("Detalle") || 
                         col.Name == "ClaveHash" || 
-                        col.Name == "TipoUsuario" || 
-                        col.Name == "Detallesventa")
+                        col.Name == "TipoUsuario" ||
+                        col.Name == "StockBajo")
                     {
                         col.Visible = false;
                     }

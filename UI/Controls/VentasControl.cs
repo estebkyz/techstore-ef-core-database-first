@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -25,7 +25,7 @@ namespace TiendaLinea.UI.Controls
         private readonly BindingSource _bindingSource  = new();
 
         private readonly DataGridView      _gridDetalles  = new();
-        private readonly List<Detallesventum> _detallesActuales = new();
+        private readonly List<DetalleVenta> _detallesActuales = new();
 
         private readonly ComboBox       _cmbCliente  = new() { DropDownStyle = ComboBoxStyle.DropDownList };
         private readonly ComboBox       _cmbEmpleado = new() { DropDownStyle = ComboBoxStyle.DropDownList };
@@ -96,7 +96,7 @@ namespace TiendaLinea.UI.Controls
 
             var grpComposicion = new GroupBox
             {
-                Text    = "Añadir ítems a la venta",
+                Text    = "AÃ±adir Ã­tems a la venta",
                 Dock    = DockStyle.Top,
                 Height  = 65,
                 Padding = new Padding(8, 4, 8, 4)
@@ -136,7 +136,7 @@ namespace TiendaLinea.UI.Controls
             _numCantidad.Dock = DockStyle.Fill;
             tblComp.Controls.Add(_numCantidad, 3, 0);
 
-            var btnAnadir = new Button { Text = "＋  Añadir ítem", AutoSize = true, Dock = DockStyle.Fill };
+            var btnAnadir = new Button { Text = "ï¼‹  AÃ±adir Ã­tem", AutoSize = true, Dock = DockStyle.Fill };
             FormLayoutHelper.StyleButton(btnAnadir, ButtonStyle.Primary);
             btnAnadir.Click += OnAnadirDetalleClick;
             tblComp.Controls.Add(btnAnadir, 5, 0);
@@ -155,10 +155,10 @@ namespace TiendaLinea.UI.Controls
             _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCant",   HeaderText = "Cant.",       Width = 60 });
             _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPrecio", HeaderText = "Precio unit.", Width = 100 });
             _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colIVA",    HeaderText = "IVA",         Width = 60 });
-            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTotal",  HeaderText = "Total ítem",  Width = 100 });
+            _gridDetalles.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTotal",  HeaderText = "Total Ã­tem",  Width = 100 });
             var colQuitar = new DataGridViewButtonColumn
             {
-                Name = "colQuitar", HeaderText = "", Text = "✕", UseColumnTextForButtonValue = true, Width = 40
+                Name = "colQuitar", HeaderText = "", Text = "âœ•", UseColumnTextForButtonValue = true, Width = 40
             };
             _gridDetalles.Columns.Add(colQuitar);
 
@@ -184,7 +184,7 @@ namespace TiendaLinea.UI.Controls
             tblResumen.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
 
             var pnlCodigo = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight };
-            pnlCodigo.Controls.Add(new Label { Text = "Código venta:", AutoSize = true, Font = FormLayoutHelper.AppFont, ForeColor = FormLayoutHelper.TextColor, Margin = new Padding(0, 3, 4, 0) });
+            pnlCodigo.Controls.Add(new Label { Text = "CÃ³digo venta:", AutoSize = true, Font = FormLayoutHelper.AppFont, ForeColor = FormLayoutHelper.TextColor, Margin = new Padding(0, 3, 4, 0) });
             _lblCodigo.Text      = $"#{_appState.GetNextCodigoVenta()}";
             _lblCodigo.ForeColor = FormLayoutHelper.AccentBlue;
             pnlCodigo.Controls.Add(_lblCodigo);
@@ -211,10 +211,10 @@ namespace TiendaLinea.UI.Controls
                 Padding       = new Padding(0)
             };
 
-            var btnConfirmar   = new Button { Text = "✓  Confirmar Venta", AutoSize = true };
-            var btnComprobante = new Button { Text = "📋 Ver Comprobante",  AutoSize = true };
-            var btnExport      = new Button { Text = "📤  Exportar JSON",   AutoSize = true };
-            var btnLimpiar     = new Button { Text = "⟳  Limpiar",         AutoSize = true };
+            var btnConfirmar   = new Button { Text = "âœ“  Confirmar Venta", AutoSize = true };
+            var btnComprobante = new Button { Text = "ðŸ“‹ Ver Comprobante",  AutoSize = true };
+            var btnExport      = new Button { Text = "ðŸ“¤  Exportar JSON",   AutoSize = true };
+            var btnLimpiar     = new Button { Text = "âŸ³  Limpiar",         AutoSize = true };
 
             FormLayoutHelper.StyleButton(btnConfirmar,   ButtonStyle.Success);
             FormLayoutHelper.StyleButton(btnComprobante, ButtonStyle.Neutral);
@@ -244,7 +244,7 @@ namespace TiendaLinea.UI.Controls
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "FechaVenta", HeaderText = "Fecha",   Width = 120 });
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colCliente",  HeaderText = "Cliente",   Width = 160, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmpleado", HeaderText = "Empleado",  Width = 140 });
-            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colItems",    HeaderText = "Ítems",     Width = 55 });
+            _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colItems",    HeaderText = "Ãtems",     Width = 55 });
             _gridVentas.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTotal",    HeaderText = "Total",     Width = 100 });
 
             _gridVentas.CellFormatting += GridVentas_CellFormatting;
@@ -252,7 +252,19 @@ namespace TiendaLinea.UI.Controls
             _bindingSource.DataSource = _appState.Ventas;
             _gridVentas.DataSource    = _bindingSource;
 
+            var lblTituloHistorial = new Label 
+            {
+                Text = " HISTORIAL DE VENTAS",
+                Dock = DockStyle.Top,
+                Font = new Font("Segoe UI", 12f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(0, 120, 215), // Azul moderno
+                Height = 40,
+                TextAlign = ContentAlignment.BottomLeft,
+                Padding = new Padding(0, 0, 0, 5)
+            };
+
             Controls.Add(_gridVentas);      
+            Controls.Add(lblTituloHistorial);
             Controls.Add(pnlResumen);       
             Controls.Add(_gridDetalles);     
             Controls.Add(grpComposicion);    
@@ -271,7 +283,7 @@ namespace TiendaLinea.UI.Controls
 
             _cmbProducto.Items.Clear();
             foreach (var p in _appState.Productos.Where(p => p.Activo))
-                _cmbProducto.Items.Add(new ComboItem<Producto>($"{p.Nombre} — ${p.PrecioVenta:N2} (Stock: {p.StockActual})", p));
+                _cmbProducto.Items.Add(new ComboItem<Producto>($"{p.Nombre} â€” ${p.PrecioVenta:N2} (Stock: {p.StockActual})", p));
         }
 
         private void OnAnadirDetalleClick(object? sender, EventArgs e)
@@ -299,7 +311,7 @@ namespace TiendaLinea.UI.Controls
             if (existente != null)
                 existente.Cantidad += cantidad;
             else
-                _detallesActuales.Add(new Detallesventum(producto, cantidad)); 
+                _detallesActuales.Add(new DetalleVenta(producto, cantidad)); 
 
             RefreshDetallesGrid();
             _cmbProducto.SelectedIndex = -1;
@@ -393,7 +405,7 @@ namespace TiendaLinea.UI.Controls
             if (venta == null)
             {
                 MessageBox.Show("Seleccione una venta del historial para ver su comprobante.",
-                    "Sin selección", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    "Sin selecciÃ³n", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -444,11 +456,11 @@ namespace TiendaLinea.UI.Controls
             switch (_gridVentas.Columns[e.ColumnIndex].Name)
             {
                 case "colCliente":
-                    e.Value = v.Cliente?.Nombre ?? "—";
+                    e.Value = v.Cliente?.Nombre ?? "â€”";
                     e.FormattingApplied = true;
                     break;
                 case "colEmpleado":
-                    e.Value = v.Empleado?.Nombre ?? "—";
+                    e.Value = v.Empleado?.Nombre ?? "â€”";
                     e.FormattingApplied = true;
                     break;
                 case "colItems":
@@ -463,6 +475,7 @@ namespace TiendaLinea.UI.Controls
         }
     }
 }
+
 
 
 

@@ -9,9 +9,10 @@ namespace TiendaLinea.Models.Usuarios
     {
         public Usuario() { }
         
-        public void SaveToJson(string path) { }
+                public void SaveToJson(string path) { System.IO.File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })); }
     }
 }
+
 
 
 
